@@ -119,7 +119,7 @@ func verifyProofWithUpdates(proof SparseMerkleProof, root []byte, key []byte, va
 		if proof.NonMembershipLeafData == nil { // Leaf is a placeholder value.
 			currentHash = th.placeholder()
 		} else { // Leaf is an unrelated leaf.
-			actualPath, valueHash := th.parseLeaf(proof.NonMembershipLeafData)
+			actualPath, valueHash, _ := th.parseLeaf(proof.NonMembershipLeafData)
 			if bytes.Equal(actualPath, path) {
 				// This is not an unrelated leaf; non-membership proof failed.
 				return false, nil

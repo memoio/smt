@@ -2,6 +2,7 @@ package smt
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"hash"
 )
 
@@ -10,21 +11,23 @@ var nodePrefix = []byte{1}
 
 type treeHasher struct {
 	hasher    hash.Hash
+	hashL     int
 	zeroValue []byte
 }
 
 func newTreeHasher(hasher hash.Hash) *treeHasher {
-	th := treeHasher{hasher: hasher}
+	var th treeHasher
+	th.hashL = sha256.New().Size()
 	th.zeroValue = make([]byte, th.pathSize())
 
 	return &th
 }
 
 func (th *treeHasher) digest(data []byte) []byte {
-	th.hasher.Write(data)
-	sum := th.hasher.Sum(nil)
-	th.hasher.Reset()
-	return sum
+	// should instantiates a hasher to avoid race condition
+	hash := sha256.New()
+	hash.Write(data)
+	return hash.Sum(nil)
 }
 
 func (th *treeHasher) path(key []byte) []byte {
@@ -37,15 +40,13 @@ func (th *treeHasher) digestLeaf(path []byte, leafData []byte) ([]byte, []byte) 
 	value = append(value, path...)
 	value = append(value, leafData...)
 
-	th.hasher.Write(value)
-	sum := th.hasher.Sum(nil)
-	th.hasher.Reset()
+	sum := th.digest(value)
 
 	return sum, value
 }
 
-func (th *treeHasher) parseLeaf(data []byte) ([]byte, []byte) {
-	return data[len(leafPrefix) : th.pathSize()+len(leafPrefix)], data[len(leafPrefix)+th.pathSize():]
+func (th *treeHasher) parseLeaf(data []byte) ([]byte, []byte, []byte) {
+	return data[len(leafPrefix) : th.pathSize()+len(leafPrefix)], data[len(leafPrefix)+th.pathSize():], data[len(leafPrefix):]
 }
 
 func (th *treeHasher) isLeaf(data []byte) bool {
@@ -58,9 +59,7 @@ func (th *treeHasher) digestNode(leftData []byte, rightData []byte) ([]byte, []b
 	value = append(value, leftData...)
 	value = append(value, rightData...)
 
-	th.hasher.Write(value)
-	sum := th.hasher.Sum(nil)
-	th.hasher.Reset()
+	sum := th.digest(value)
 
 	return sum, value
 }
@@ -70,7 +69,7 @@ func (th *treeHasher) parseNode(data []byte) ([]byte, []byte) {
 }
 
 func (th *treeHasher) pathSize() int {
-	return th.hasher.Size()
+	return th.hashL
 }
 
 func (th *treeHasher) placeholder() []byte {

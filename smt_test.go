@@ -467,150 +467,150 @@ func (h *dummyHasher) BlockSize() int {
 	return h.Size()
 }
 
-func TestOrphanRemoval(t *testing.T) {
-	var smn, smv *SimpleMap
-	var smt *SparseMerkleTree
-	var err error
-	nodeCount := func() int {
-		return len(smn.m)
-	}
+// func TestOrphanRemoval(t *testing.T) {
+// 	var smn, smv *SimpleMap
+// 	var smt *SparseMerkleTree
+// 	var err error
+// 	nodeCount := func() int {
+// 		return len(smn.m)
+// 	}
 
-	setup := func() {
-		smn, smv = NewSimpleMap(), NewSimpleMap()
-		smt = NewSparseMerkleTree(smn, smv, sha256.New())
-		_, err = smt.Update([]byte("testKey"), []byte("testValue"))
-		if err != nil {
-			t.Errorf("returned error when updating empty key: %v", err)
-		}
-		// only root and value mapping
-		if 1 != nodeCount() {
-			t.Errorf("expected 1 nodes after insertion, got: %d", nodeCount())
-		}
-	}
+// 	setup := func() {
+// 		smn, smv = NewSimpleMap(), NewSimpleMap()
+// 		smt = NewSparseMerkleTree(smn, smv, sha256.New())
+// 		_, err = smt.Update([]byte("testKey"), []byte("testValue"))
+// 		if err != nil {
+// 			t.Errorf("returned error when updating empty key: %v", err)
+// 		}
+// 		// only root and value mapping
+// 		if 1 != nodeCount() {
+// 			t.Errorf("expected 1 nodes after insertion, got: %d", nodeCount())
+// 		}
+// 	}
 
-	t.Run("delete 1", func(t *testing.T) {
-		setup()
-		_, err = smt.Delete([]byte("testKey"))
-		if err != nil {
-			t.Errorf("returned error when updating non-empty key: %v", err)
-		}
-		if 0 != nodeCount() {
-			t.Errorf("expected 0 nodes after deletion, got: %d", nodeCount())
-		}
-	})
+// 	t.Run("delete 1", func(t *testing.T) {
+// 		setup()
+// 		_, err = smt.Delete([]byte("testKey"))
+// 		if err != nil {
+// 			t.Errorf("returned error when updating non-empty key: %v", err)
+// 		}
+// 		if 0 != nodeCount() {
+// 			t.Errorf("expected 0 nodes after deletion, got: %d", nodeCount())
+// 		}
+// 	})
 
-	t.Run("overwrite 1", func(t *testing.T) {
-		setup()
-		_, err = smt.Update([]byte("testKey"), []byte("testValue2"))
-		if err != nil {
-			t.Errorf("returned error when updating non-empty key: %v", err)
-		}
-		// Overwritten value should be pruned
-		if 1 != nodeCount() {
-			t.Errorf("expected 1 nodes after insertion, got: %d", nodeCount())
-		}
-	})
+// 	t.Run("overwrite 1", func(t *testing.T) {
+// 		setup()
+// 		_, err = smt.Update([]byte("testKey"), []byte("testValue2"))
+// 		if err != nil {
+// 			t.Errorf("returned error when updating non-empty key: %v", err)
+// 		}
+// 		// Overwritten value should be pruned
+// 		if 1 != nodeCount() {
+// 			t.Errorf("expected 1 nodes after insertion, got: %d", nodeCount())
+// 		}
+// 	})
 
-	type testCase struct {
-		newKey string
-		count  int
-	}
-	cases := []testCase{
-		{"testKey2", 3}, // common prefix = 0, root + 2 leaves
-		{"foo", 5},      // common prefix = 2, root + 2 node branch + 2 leaves
-	}
+// 	type testCase struct {
+// 		newKey string
+// 		count  int
+// 	}
+// 	cases := []testCase{
+// 		{"testKey2", 3}, // common prefix = 0, root + 2 leaves
+// 		{"foo", 5},      // common prefix = 2, root + 2 node branch + 2 leaves
+// 	}
 
-	t.Run("delete multiple", func(t *testing.T) {
-		for _, tc := range cases {
-			setup()
-			_, err = smt.Update([]byte(tc.newKey), []byte("testValue2"))
-			if err != nil {
-				t.Errorf("returned error when updating non-empty key: %v", err)
-			}
-			if tc.count != nodeCount() {
-				t.Errorf("expected %d nodes after insertion, got: %d", tc.count, nodeCount())
-			}
-			_, err = smt.Delete([]byte("testKey"))
-			if err != nil {
-				t.Errorf("returned error when updating non-empty key: %v", err)
-			}
-			if 1 != nodeCount() {
-				t.Errorf("expected 1 nodes after deletion, got: %d", nodeCount())
-			}
-			_, err = smt.Delete([]byte(tc.newKey))
-			if err != nil {
-				t.Errorf("returned error when updating non-empty key: %v", err)
-			}
-			if 0 != nodeCount() {
-				t.Errorf("expected 0 nodes after deletion, got: %d", nodeCount())
-			}
-		}
-	})
+// 	t.Run("delete multiple", func(t *testing.T) {
+// 		for _, tc := range cases {
+// 			setup()
+// 			_, err = smt.Update([]byte(tc.newKey), []byte("testValue2"))
+// 			if err != nil {
+// 				t.Errorf("returned error when updating non-empty key: %v", err)
+// 			}
+// 			if tc.count != nodeCount() {
+// 				t.Errorf("expected %d nodes after insertion, got: %d", tc.count, nodeCount())
+// 			}
+// 			_, err = smt.Delete([]byte("testKey"))
+// 			if err != nil {
+// 				t.Errorf("returned error when updating non-empty key: %v", err)
+// 			}
+// 			if 1 != nodeCount() {
+// 				t.Errorf("expected 1 nodes after deletion, got: %d", nodeCount())
+// 			}
+// 			_, err = smt.Delete([]byte(tc.newKey))
+// 			if err != nil {
+// 				t.Errorf("returned error when updating non-empty key: %v", err)
+// 			}
+// 			if 0 != nodeCount() {
+// 				t.Errorf("expected 0 nodes after deletion, got: %d", nodeCount())
+// 			}
+// 		}
+// 	})
 
-	t.Run("overwrite and delete", func(t *testing.T) {
-		setup()
-		_, err = smt.Update([]byte("testKey"), []byte("testValue2"))
-		if err != nil {
-			t.Errorf("returned error when updating non-empty key: %v", err)
-		}
-		if 1 != nodeCount() {
-			t.Errorf("expected 1 nodes after insertion, got: %d", nodeCount())
-		}
-		_, err = smt.Delete([]byte("testKey"))
-		if err != nil {
-			t.Errorf("returned error when updating non-empty key: %v", err)
-		}
-		if 0 != nodeCount() {
-			t.Errorf("expected 0 nodes after deletion, got: %d", nodeCount())
-		}
+// 	t.Run("overwrite and delete", func(t *testing.T) {
+// 		setup()
+// 		_, err = smt.Update([]byte("testKey"), []byte("testValue2"))
+// 		if err != nil {
+// 			t.Errorf("returned error when updating non-empty key: %v", err)
+// 		}
+// 		if 1 != nodeCount() {
+// 			t.Errorf("expected 1 nodes after insertion, got: %d", nodeCount())
+// 		}
+// 		_, err = smt.Delete([]byte("testKey"))
+// 		if err != nil {
+// 			t.Errorf("returned error when updating non-empty key: %v", err)
+// 		}
+// 		if 0 != nodeCount() {
+// 			t.Errorf("expected 0 nodes after deletion, got: %d", nodeCount())
+// 		}
 
-		for _, tc := range cases {
-			setup()
-			_, err = smt.Update([]byte(tc.newKey), []byte("testValue2"))
-			if err != nil {
-				t.Errorf("returned error when updating non-empty key: %v", err)
-			}
-			if tc.count != nodeCount() {
-				t.Errorf("expected 1 nodes after insertion, got: %d", nodeCount())
-			}
-			_, err = smt.Update([]byte(tc.newKey), []byte("testValue3"))
-			if err != nil {
-				t.Errorf("returned error when updating non-empty key: %v", err)
-			}
-			if tc.count != nodeCount() {
-				t.Errorf("expected %d nodes after insertion, got: %d", tc.count, nodeCount())
-			}
-			_, err = smt.Delete([]byte("testKey"))
-			if err != nil {
-				t.Errorf("returned error when updating non-empty key: %v", err)
-			}
-			if 1 != nodeCount() {
-				t.Errorf("expected 1 nodes after deletion, got: %d", nodeCount())
-			}
-			_, err = smt.Delete([]byte(tc.newKey))
-			if err != nil {
-				t.Errorf("returned error when updating non-empty key: %v", err)
-			}
-			if 0 != nodeCount() {
-				t.Errorf("expected 0 nodes after deletion, got: %d", nodeCount())
-			}
+// 		for _, tc := range cases {
+// 			setup()
+// 			_, err = smt.Update([]byte(tc.newKey), []byte("testValue2"))
+// 			if err != nil {
+// 				t.Errorf("returned error when updating non-empty key: %v", err)
+// 			}
+// 			if tc.count != nodeCount() {
+// 				t.Errorf("expected 1 nodes after insertion, got: %d", nodeCount())
+// 			}
+// 			_, err = smt.Update([]byte(tc.newKey), []byte("testValue3"))
+// 			if err != nil {
+// 				t.Errorf("returned error when updating non-empty key: %v", err)
+// 			}
+// 			if tc.count != nodeCount() {
+// 				t.Errorf("expected %d nodes after insertion, got: %d", tc.count, nodeCount())
+// 			}
+// 			_, err = smt.Delete([]byte("testKey"))
+// 			if err != nil {
+// 				t.Errorf("returned error when updating non-empty key: %v", err)
+// 			}
+// 			if 1 != nodeCount() {
+// 				t.Errorf("expected 1 nodes after deletion, got: %d", nodeCount())
+// 			}
+// 			_, err = smt.Delete([]byte(tc.newKey))
+// 			if err != nil {
+// 				t.Errorf("returned error when updating non-empty key: %v", err)
+// 			}
+// 			if 0 != nodeCount() {
+// 				t.Errorf("expected 0 nodes after deletion, got: %d", nodeCount())
+// 			}
 
-		}
-	})
+// 		}
+// 	})
 
-	t.Run("delete duplicate value", func(t *testing.T) {
-		setup()
-		_, err = smt.Update([]byte("testKey2"), []byte("testValue"))
-		if err != nil {
-			t.Errorf("returned error when updating non-empty key: %v", err)
-		}
-		_, err = smt.Delete([]byte("testKey"))
-		if err != nil {
-			t.Errorf("returned error when updating non-empty key: %v", err)
-		}
-		_, err = smt.Delete([]byte("testKey2"))
-		if err != nil {
-			t.Errorf("returned error when updating non-empty key: %v", err)
-		}
-	})
-}
+// 	t.Run("delete duplicate value", func(t *testing.T) {
+// 		setup()
+// 		_, err = smt.Update([]byte("testKey2"), []byte("testValue"))
+// 		if err != nil {
+// 			t.Errorf("returned error when updating non-empty key: %v", err)
+// 		}
+// 		_, err = smt.Delete([]byte("testKey"))
+// 		if err != nil {
+// 			t.Errorf("returned error when updating non-empty key: %v", err)
+// 		}
+// 		_, err = smt.Delete([]byte("testKey2"))
+// 		if err != nil {
+// 			t.Errorf("returned error when updating non-empty key: %v", err)
+// 		}
+// 	})
+// }

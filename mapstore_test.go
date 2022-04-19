@@ -21,7 +21,7 @@ func TestSimpleMap(t *testing.T) {
 	}
 
 	// Tests for Put.
-	err = sm.Set(h.Sum(nil), []byte("hello"))
+	err = sm.Put(h.Sum(nil), []byte("hello"))
 	if err != nil {
 		t.Error("updating a key returned an error")
 	}

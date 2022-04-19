@@ -34,14 +34,14 @@ func (dsmst *DeepSparseMerkleSubTree) AddBranch(proof SparseMerkleProof, key []b
 	}
 
 	if !bytes.Equal(value, defaultValue) { // Membership proof.
-		if err := dsmst.values.Set(dsmst.th.path(key), value); err != nil {
+		if err := dsmst.values.Put(dsmst.th.path(key), value); err != nil {
 			return err
 		}
 	}
 
 	// Update nodes along branch
 	for _, update := range updates {
-		err := dsmst.nodes.Set(update[0], update[1])
+		err := dsmst.nodes.Put(update[0], update[1])
 		if err != nil {
 			return err
 		}
@@ -50,7 +50,7 @@ func (dsmst *DeepSparseMerkleSubTree) AddBranch(proof SparseMerkleProof, key []b
 	// Update sibling node
 	if proof.SiblingData != nil {
 		if proof.SideNodes != nil && len(proof.SideNodes) > 0 {
-			err := dsmst.nodes.Set(proof.SideNodes[0], proof.SiblingData)
+			err := dsmst.nodes.Put(proof.SideNodes[0], proof.SiblingData)
 			if err != nil {
 				return err
 			}
@@ -80,7 +80,7 @@ func (smt *SparseMerkleTree) GetDescend(key []byte) ([]byte, error) {
 			return nil, err
 		} else if smt.th.isLeaf(currentData) {
 			// We've reached the end. Is this the actual leaf?
-			p, _ := smt.th.parseLeaf(currentData)
+			p, _, _ := smt.th.parseLeaf(currentData)
 			if !bytes.Equal(path, p) {
 				// Nope. Therefore the key is actually empty.
 				return defaultValue, nil
