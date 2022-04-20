@@ -1,3 +1,3 @@
-module github.com/celestiaorg/smt
+module github.com/memoio/smt
 
 go 1.14
