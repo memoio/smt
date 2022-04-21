@@ -42,3 +42,24 @@ func main() {
 ```
 
 [libra whitepaper]: https://diem-developers-components.netlify.app/papers/the-diem-blockchain/2020-05-26.pdf
+
+## Patch log
+
+> v0.2.1
+
+**Fix**
+
+* Multiversion: modifies the value's valuehash to support multiversion.
+* Same Value: same value with same hash (recognized as key in `valuestore`) will cause over deletion - a deletion of a kv may cause another key with same value cannot find the value. Using `[keyhash,valuehash]` as a value's valuehash can mitigate this problem.
+* Get Exception: adds judgment when a key's path is not equal to the keyhash in the leaf (i.e., requests a non-existent key, instead of returning a false value, it returns a empty value)
+
+**Modify**
+
+* Mapstore Interface: fit to badger store.
+* Related call.
+
+**Supplement**
+
+* Multithread Support: replaces the public hasher with the instance (to avoid race condition).
+* Multiversion Same Leaf Support: simple value store adds `count` FYI (avoid the deletion of same kv, old version leaf to affect the newer one).
+* Removing Intermidiate Version: `RemovePath` provides a parameter `keepRoot` to retain old version root, e.g., a state transition `a -> b -> c`, `RemovePath` can remove state `b` without affecting state `a`.
