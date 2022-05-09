@@ -63,3 +63,14 @@ func main() {
 * Multithread Support: replaces the public hasher with the instance (to avoid race condition).
 * Multiversion Same Leaf Support: simple value store adds `count` FYI (avoid the deletion of same kv, old version leaf to affect the newer one).
 * Removing Intermidiate Version: `RemovePath` provides a parameter `keepRoot` to retain old version root, e.g., a state transition `a -> b -> c`, `RemovePath` can remove state `b` without affecting state `a`.
+* Add some tests and a debug support function.
+
+> v0.2.2
+
+**Restore**
+
+* Multithread Close: restores original hasher and removes hard coding `sha256` in `treehasher`. Instead, solves the multithread operation problem by initializing multiple tree instances, e.g., `ImportSparseMerkleTree` in every `get` or `put` operation to avoid race condition.
+
+**Simplify**
+
+* Simplifies some interfaces.

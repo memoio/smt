@@ -2,7 +2,6 @@ package smt
 
 import (
 	"bytes"
-	"crypto/sha256"
 	"hash"
 )
 
@@ -11,23 +10,21 @@ var nodePrefix = []byte{1}
 
 type treeHasher struct {
 	hasher    hash.Hash
-	hashL     int
 	zeroValue []byte
 }
 
 func newTreeHasher(hasher hash.Hash) *treeHasher {
-	var th treeHasher
-	th.hashL = sha256.New().Size()
+	th := treeHasher{hasher: hasher}
 	th.zeroValue = make([]byte, th.pathSize())
 
 	return &th
 }
 
 func (th *treeHasher) digest(data []byte) []byte {
-	// should instantiates a hasher to avoid race condition
-	hash := sha256.New()
-	hash.Write(data)
-	return hash.Sum(nil)
+	th.hasher.Write(data)
+	sum := th.hasher.Sum(nil)
+	th.hasher.Reset()
+	return sum
 }
 
 func (th *treeHasher) path(key []byte) []byte {
@@ -69,7 +66,7 @@ func (th *treeHasher) parseNode(data []byte) ([]byte, []byte) {
 }
 
 func (th *treeHasher) pathSize() int {
-	return th.hashL
+	return th.hasher.Size()
 }
 
 func (th *treeHasher) placeholder() []byte {

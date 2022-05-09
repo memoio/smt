@@ -61,12 +61,6 @@ func (smt *SparseMerkleTree) SetRoot(root []byte) {
 	smt.root = root
 }
 
-func (smt *SparseMerkleTree) SetStore(nodes, values MapStore, root []byte) {
-	smt.nodes = nodes
-	smt.values = values
-	smt.root = root
-}
-
 func (smt *SparseMerkleTree) depth() int {
 	return smt.th.pathSize() * 8
 }
@@ -74,42 +68,7 @@ func (smt *SparseMerkleTree) depth() int {
 // Get gets the value of a key from the tree.
 func (smt *SparseMerkleTree) Get(key []byte) ([]byte, error) {
 	// Get tree's root
-	root := smt.Root()
-
-	if bytes.Equal(root, smt.th.placeholder()) {
-		// The tree is empty, return the default value.
-		return defaultValue, nil
-	}
-
-	path := smt.th.path(key)
-	_, _, leafData, _, err := smt.sideNodesForRoot(path, root, false)
-	if err != nil {
-		var invalidKeyError *InvalidKeyError
-
-		if errors.As(err, &invalidKeyError) {
-			// If key isn't found, return default value
-			return defaultValue, nil
-		} else {
-			// Otherwise percolate up any other error
-			return nil, err
-		}
-	}
-	if leafData == nil {
-		return defaultValue, nil
-	}
-
-	keyHash, _, kvHash := smt.th.parseLeaf(leafData)
-	if !bytes.Equal(keyHash, path) {
-		return defaultValue, nil
-	}
-
-	kv := smt.th.digest(kvHash)
-
-	value, err := smt.values.Get(kv)
-	if err != nil {
-		return nil, err
-	}
-	return value, nil
+	return smt.GetFromRoot(key, smt.root)
 }
 
 // Get gets the value of a key from the tree.
@@ -177,7 +136,6 @@ func (smt *SparseMerkleTree) UpdateForRoot(key []byte, value []byte, root []byte
 	sideNodes, pathNodes, oldLeafData, _, err := smt.sideNodesForRoot(path, root, false)
 	if err != nil {
 		return nil, fmt.Errorf("trail sidenodes fail: %w", err)
-		//return nil, err
 	}
 
 	var newRoot []byte
@@ -188,11 +146,6 @@ func (smt *SparseMerkleTree) UpdateForRoot(key []byte, value []byte, root []byte
 			// This key is already empty; return the old root.
 			return root, nil
 		}
-		// _, oldValueHash := smt.th.parseLeaf(oldLeafData)
-		// if err := smt.values.Delete(oldValueHash); err != nil {
-		// 	return nil, err
-		// }
-
 	} else {
 		// Insert or update operation.
 		newRoot, err = smt.updateWithSideNodes(path, key, value, sideNodes, pathNodes, oldLeafData)
@@ -545,24 +498,16 @@ func (smt *SparseMerkleTree) PrintSMT(root []byte) (uint64, error) {
 	var level = 1
 	fmt.Printf("--level-%d  ", level)
 	if smt.th.isLeaf(currentData) {
-		// _, valueHash := smt.th.parseLeaf(currentData)
 		kv := smt.th.digest(currentData[1:])
 		value, _ := smt.values.Get(kv)
 		fmt.Printf("(%s(leaf))\n", string(value))
-		// fmt.Printf("have leaf:1,  node:0\n")
 	} else {
 		fmt.Println("")
-		// fmt.Printf("have leaf:0,  node:1\n")
 		current = append(current, currentData)
 	}
 
-	// var total_read uint64
-	// var total_leaf uint64
-	// var total_node uint64 = 1
 	for len(current) > 0 {
 		level++
-		// var leaf uint64 = 0
-		// var node uint64 = 0
 		fmt.Printf("--level-%d  ", level)
 		for _, data := range current {
 			left, right := smt.th.parseNode(data)
@@ -576,11 +521,9 @@ func (smt *SparseMerkleTree) PrintSMT(root []byte) (uint64, error) {
 					kv := smt.th.digest(kvHash)
 					value, _ := smt.values.Get(kv)
 					fmt.Printf("(%s(leaf), ", string(value))
-					// leaf++
 				} else {
 					next = append(next, leftData)
 					fmt.Printf("(%x(left), ", left)
-					// node++
 				}
 			} else {
 				fmt.Printf("(nil(left), ")
@@ -595,7 +538,6 @@ func (smt *SparseMerkleTree) PrintSMT(root []byte) (uint64, error) {
 					kv := smt.th.digest(kvHash)
 					value, _ := smt.values.Get(kv)
 					fmt.Printf("%s(leaf))  ", string(value))
-					// leaf++
 				} else {
 					next = append(next, rightData)
 					fmt.Printf("%x(right))  ", right)
@@ -608,13 +550,7 @@ func (smt *SparseMerkleTree) PrintSMT(root []byte) (uint64, error) {
 		current = next
 		next = nil
 		fmt.Println("")
-		// fmt.Printf("have leaf:%d,  node:%d\n", leaf, node)
-		// total_read += leaf * uint64(level)
-		// total_leaf += leaf
-		// total_node += node
 	}
-	// fmt.Printf("toatl leaf:%d,  total node:%d,  avege read:%.4f\n", total_leaf, total_node, float64(total_read) / float64(total_leaf))
-	// return total_leaf + total_node, nil
 	return 0, nil
 }
 
